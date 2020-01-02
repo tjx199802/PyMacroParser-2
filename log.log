@@ -1,0 +1,288 @@
+2020-01-02 11:44
+check directive --> #ifndef MCTEST
+2020-01-02 11:44
+check directive --> #define MCTEST
+2020-01-02 11:44
+check directive --> #ifdef MC1
+2020-01-02 11:44
+check directive --> #define data1 0x20
+2020-01-02 11:44
+check directive --> #define  data2 2.5f
+2020-01-02 11:44
+check directive --> #define data3 L"this is a data"
+2020-01-02 11:44
+check directive --> #define data4 true
+2020-01-02 11:44
+check directive --> #ifdef MC2
+2020-01-02 11:44
+check directive --> #define data5 'a'
+2020-01-02 11:44
+check directive --> #define data6 { {2.0, "abc"}, {1.5, "def"}, {5.6f, "7.2"}}
+2020-01-02 11:44
+check directive --> #else
+2020-01-02 11:45
+check directive --> #ifndef MCTEST
+2020-01-02 11:45
+check directive --> #define MCTEST
+2020-01-02 11:45
+check directive --> #ifdef MC1
+2020-01-02 11:45
+check directive --> #define data1 0x20
+2020-01-02 11:45
+check directive --> #define  data2 2.5f
+2020-01-02 11:45
+check directive --> #define data3 L"this is a data"
+2020-01-02 11:45
+check directive --> #define data4 true
+2020-01-02 11:45
+check directive --> #ifdef MC2
+2020-01-02 11:45
+check directive --> #define data5 'a'
+2020-01-02 11:45
+check directive --> #define data6 { {2.0, "abc"}, {1.5, "def"}, {5.6f, "7.2"}}
+2020-01-02 11:45
+check directive --> #else
+2020-01-02 11:45
+check directive --> #define data5 {5.0, 7.5, 3.8}
+2020-01-02 11:45
+check directive --> #define data6 'c'
+2020-01-02 11:45
+check directive --> #endif
+2020-01-02 11:45
+check directive --> #else
+2020-01-02 11:45
+check directive --> #define data1 1.0f
+2020-01-02 11:45
+check directive --> #define data2 2
+2020-01-02 11:45
+check directive --> #define data3  false
+2020-01-02 11:45
+check directive --> #define data4 "this is a data"
+2020-01-02 11:45
+check directive --> #ifdef MC2
+2020-01-02 11:45
+check directive --> #define data5 'B'
+2020-01-02 11:45
+check directive --> #define data6 {1, 6, 3}
+2020-01-02 11:45
+check directive --> #define data7 0xa
+2020-01-02 11:45
+check directive --> #else
+2020-01-02 11:45
+check directive --> #define data5 'D'
+2020-01-02 11:45
+check directive --> #define data6 {1, 6}
+2020-01-02 11:45
+check directive --> #endif
+2020-01-02 11:45
+check directive --> #endif
+2020-01-02 11:45
+check directive --> #ifdef MC2
+2020-01-02 11:45
+check directive --> #undef MC2
+2020-01-02 11:46
+check directive --> #ifndef MCTEST
+2020-01-02 11:46
+check directive --> #define MCTEST
+2020-01-02 11:46
+check directive --> #ifdef MC1
+2020-01-02 11:46
+check directive --> #define data1 0x20
+2020-01-02 11:46
+check directive --> #define  data2 2.5f
+2020-01-02 11:46
+check directive --> #define data3 L"this is a data"
+2020-01-02 11:46
+check directive --> #define data4 true
+2020-01-02 11:46
+check directive --> #ifdef MC2
+2020-01-02 11:46
+check directive --> #define data5 'a'
+2020-01-02 11:46
+check directive --> #define data6 { {2.0, "abc"}, {1.5, "def"}, {5.6f, "7.2"}}
+2020-01-02 11:46
+check directive --> #else
+2020-01-02 11:46
+check directive --> #define data5 {5.0, 7.5, 3.8}
+2020-01-02 11:46
+check directive --> #define data6 'c'
+2020-01-02 11:46
+check directive --> #endif
+2020-01-02 11:46
+check directive --> #else
+2020-01-02 11:46
+check directive --> #define data1 1.0f
+2020-01-02 11:46
+check directive --> #define data2 2
+2020-01-02 11:46
+check directive --> #define data3  false
+2020-01-02 11:46
+check directive --> #define data4 "this is a data"
+2020-01-02 11:46
+check directive --> #ifdef MC2
+2020-01-02 11:46
+check directive --> #define data5 'B'
+2020-01-02 11:46
+check directive --> #define data6 {1, 6, 3}
+2020-01-02 11:46
+check directive --> #define data7 0xa
+2020-01-02 11:46
+check directive --> #else
+2020-01-02 11:46
+check directive --> #define data5 'D'
+2020-01-02 11:46
+check directive --> #define data6 {1, 6}
+2020-01-02 11:46
+check directive --> #endif
+2020-01-02 11:46
+check directive --> #endif
+2020-01-02 11:46
+check directive --> #ifdef MC2
+2020-01-02 11:46
+check directive --> #undef MC2
+2020-01-02 11:46
+check directive --> #endif
+2020-01-02 11:46
+check directive --> #endif
+2020-01-02 11:46
+check directive --> #ifndef MCTEST
+2020-01-02 11:46
+check directive --> #define MCTEST
+2020-01-02 11:46
+check directive --> #ifdef MC1
+2020-01-02 11:46
+check directive --> #define data1 0x20
+2020-01-02 11:46
+check directive --> #define  data2 2.5f
+2020-01-02 11:46
+check directive --> #define data3 L"this is a data"
+2020-01-02 11:46
+check directive --> #define data4 true
+2020-01-02 11:46
+check directive --> #ifdef MC2
+2020-01-02 11:46
+check directive --> #define data5 'a'
+2020-01-02 11:46
+check directive --> #define data6 { {2.0, "abc"}, {1.5, "def"}, {5.6f, "7.2"}}
+2020-01-02 11:46
+check directive --> #else
+2020-01-02 11:46
+check directive --> #define data5 {5.0, 7.5, 3.8}
+2020-01-02 11:46
+check directive --> #define data6 'c'
+2020-01-02 11:46
+check directive --> #endif
+2020-01-02 11:46
+check directive --> #else
+2020-01-02 11:46
+check directive --> #define data1 1.0f
+2020-01-02 11:46
+check directive --> #define data2 2
+2020-01-02 11:46
+check directive --> #define data3  false
+2020-01-02 11:46
+check directive --> #define data4 "this is a data"
+2020-01-02 11:46
+check directive --> #ifdef MC2
+2020-01-02 11:46
+check directive --> #define data5 'B'
+2020-01-02 11:46
+check directive --> #define data6 {1, 6, 3}
+2020-01-02 11:46
+check directive --> #define data7 0xa
+2020-01-02 11:46
+check directive --> #else
+2020-01-02 11:46
+check directive --> #define data5 'D'
+2020-01-02 11:46
+check directive --> #define data6 {1, 6}
+2020-01-02 11:46
+check directive --> #endif
+2020-01-02 11:46
+check directive --> #endif
+2020-01-02 11:46
+check directive --> #ifdef MC2
+2020-01-02 11:46
+check directive --> #undef MC2
+2020-01-02 11:46
+check directive --> #endif
+2020-01-02 11:46
+check directive --> #endif
+2020-01-02 11:46
+check directive --> #ifndef MCTEST
+2020-01-02 11:46
+check directive --> #define MCTEST
+2020-01-02 11:46
+check directive --> #ifdef MC1
+2020-01-02 11:46
+check directive --> #define data1 0x20
+2020-01-02 11:46
+check directive --> #define  data2 2.5f
+2020-01-02 11:46
+check directive --> #define data3 L"this is a data"
+2020-01-02 11:46
+check directive --> #define data4 true
+2020-01-02 11:46
+check directive --> #ifdef MC2
+2020-01-02 11:46
+check directive --> #define data5 'a'
+2020-01-02 11:46
+check directive --> #define data6 { {2.0, "abc"}, {1.5, "def"}, {5.6f, "7.2"}}
+2020-01-02 11:46
+check directive --> #else
+2020-01-02 11:46
+check directive --> #define data5 {5.0, 7.5, 3.8}
+2020-01-02 11:46
+check directive --> #define data6 'c'
+2020-01-02 11:46
+check directive --> #endif
+2020-01-02 11:46
+check directive --> #else
+2020-01-02 11:46
+check directive --> #define data1 1.0f
+2020-01-02 11:46
+check directive --> #define data2 2
+2020-01-02 11:46
+check directive --> #define data3  false
+2020-01-02 11:46
+check directive --> #define data4 "this is a data"
+2020-01-02 11:46
+check directive --> #ifdef MC2
+2020-01-02 11:46
+check directive --> #define data5 'B'
+2020-01-02 11:46
+check directive --> #define data6 {1, 6, 3}
+2020-01-02 11:46
+check directive --> #define data7 0xa
+2020-01-02 11:46
+check directive --> #else
+2020-01-02 11:46
+check directive --> #define data5 'D'
+2020-01-02 11:46
+check directive --> #define data6 {1, 6}
+2020-01-02 11:46
+check directive --> #endif
+2020-01-02 11:46
+check directive --> #endif
+2020-01-02 11:46
+check directive --> #ifdef MC2
+2020-01-02 11:46
+check directive --> #undef MC2
+2020-01-02 11:46
+check directive --> #endif
+2020-01-02 11:46
+check directive --> #endif
+2020-01-02 11:46
+check directive --> #define MCTEST
+2020-01-02 11:46
+check directive --> #define data5 68
+2020-01-02 11:46
+check directive --> #define data4 "this is a data"
+2020-01-02 11:46
+check directive --> #define data6 {1, 6}
+2020-01-02 11:46
+check directive --> #define data1 1.0
+2020-01-02 11:46
+check directive --> #define data3 false
+2020-01-02 11:46
+check directive --> #define data2 2
