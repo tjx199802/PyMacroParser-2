@@ -2,6 +2,7 @@
 """PyMacroParser"""
 from myparser.log import logger
 
+
 class ConstantException(Exception):
     pass
 
@@ -22,6 +23,11 @@ class Ctype:
     TUPLE = 8
 
 
+class StringType:
+    NORMAL_STRING = 0
+    RAW_STRING = 1
+
+
 class PreprocessorType:
     ILLEGAL = 0
     IFDEF = 1
@@ -32,8 +38,77 @@ class PreprocessorType:
     UNDEF = 6
 
 
+class Find:
+    @staticmethod
+    def find_string_end(s, i):
+        """Find the end of the string.
+
+        Arguments:
+        s -- unicode
+        i -- the index of the string beginning(left double quotation)
+
+        Returns:
+        string_end -- int, return the index of string end, return -1 if no
+                    string end is found.
+        """
+        # Determine the type of string: normal string or raw string
+        string_type = Judge.string_type(s, i)
+        if string_type == StringType.NORMAL_STRING:
+            return Find.find_normal_string_end(s, i)
+        return Find.find_raw_string_end(s, i)
+
+    @staticmethod
+    def find_normal_string_end(s, i):
+        while True:
+            dq_index = s.find(u'"', i + 1)
+            if not Judge.is_escaped(s, dq_index):
+                return dq_index
+            i = dq_index
+
+    @staticmethod
+    def find_raw_string_end(s, i):
+        newline_index = s.find(u'\n', i + 1)
+        if newline_index == -1:
+            return s.rfind(u'"', i + 1)
+        else:
+            return s.rfind(u'"', i + 1, newline_index)
+
+    @staticmethod
+    def find_char_end(s, i):
+        while True:
+            q_index = s.find(u'\'', i + 1)
+            if not Judge.is_escaped(s, q_index):
+                return q_index
+            i = q_index
+
+class Judge:
+    @staticmethod
+    def string_type(s, i):
+        """Determine the type of string that starts from index i in s.
+
+        Arguments:
+        s -- unicode
+        i -- the index of the string beginning(left double quotation)
+        """
+        if i > 1 and s[i-1] == u'R':
+            return StringType.RAW_STRING
+        return StringType.NORMAL_STRING
+
+    @staticmethod
+    def is_escaped(s, i):
+        """Determine whether the ith character of string i is escaped.
+        
+        s -- unicode
+        i -- int
+        """
+        num_escape = 0
+        while i > 0 and s[i - 1] == u'\\':
+            num_escape += 1
+            i -= 1
+        return bool(num_escape % 2)
+
 class Util:
-    
+
     @staticmethod
     def find_all(s, sub):
         sub_indexes = []
@@ -62,7 +137,8 @@ class Util:
             if right_bracket_index == -1:
                 raise PreprocessorSytaxException()
             else:
-                arguments = d[left_bracket_index, right_bracket_index].split(u',')
+                arguments = d[left_bracket_index,
+                              right_bracket_index].split(u',')
                 for argument in arguments:
                     if not Util.is_legal_single_identifier(argument.strip()):
                         return PreprocessorSytaxException()
@@ -70,45 +146,61 @@ class Util:
 
     @staticmethod
     def remove_comment(s):
-        s = Util.remove_line_comment(s)
-        s = Util.remove_block_comment(s)
-        return s
+        """Remove C/C++ comment.
 
-    @staticmethod
-    def remove_line_comment(s):
-        new_s = u''
-        start, end = 0, len(s)
-        while start < end:
-            line_comment_index = s.find(u'//', start)
-            if line_comment_index == -1:
-                new_s += s[start:]
-                break
-            else:
-                new_s += s[start:line_comment_index]
-                new_line_index = s.find(u'\n', line_comment_index + 2)
-                if new_line_index == -1:
-                    break
-                else:
-                    start = new_line_index
-        return new_s
+        Arguments:
+        s -- unicode
+        """
+        STATE_NORMAL = 0
+        STATE_SLASH = 1
 
-    @staticmethod
-    def remove_block_comment(s):
+        state = STATE_NORMAL
+        i = 0
         new_s = u''
-        start, end = 0, len(s)
-        while start < end:
-            block_comment_start_index = s.find(u'/*', start)
-            if block_comment_start_index == -1:
-                new_s += s[start:]
-                break
-            else:
-                new_s += s[start:block_comment_start_index]
-                block_comment_end_index = s.find(u'*/',
-                                                 block_comment_start_index + 2)
-                if block_comment_end_index == -1:
-                    break
+        while i < len(s):
+            c = s[i]
+            if state == STATE_NORMAL:
+                if c == u'"':
+                    logger.info("This is the beginning of the string.")
+                    string_end = Find.find_string_end(s, i)
+                    logger.info('string: ' + str(i) + str(string_end))
+                    assert string_end != -1, 'incomplete string'
+                    if string_end == len(s) - 1:
+                        new_s += s[i:]
+                    else:
+                        new_s += s[i:string_end + 1]
+                    i = string_end + 1
+                elif c == u'\'':
+                    logger.info("This is the beginning of the char.")
+                    char_end = Find.find_char_end(s, i)
+                    assert char_end != -1, 'incomplete char'
+                    if char_end == len(s) - 1:
+                        new_s += s[i:]
+                    else:
+                        new_s += s[i:char_end + 1]
+                    i = char_end + 1
+                elif c == u'/':
+                    i += 1
+                    state = STATE_SLASH
                 else:
-                    start = block_comment_end_index + 2
+                    new_s += c
+                    i += 1
+            elif state == STATE_SLASH:
+                if c == u'/':
+                    logger.info("This is the beginning of a line comment.")
+                    newline_index = s.find(u'\n', i)
+                    if newline_index == -1:
+                        break
+                    i = newline_index
+                    state = STATE_NORMAL
+                elif c == u'*':
+                    logger.info("This is the beginning of a block comment.")
+                    block_comment_end = s.find(u'*/', i + 1)
+                    assert block_comment_end != -1, 'incomplete block comment'
+                    i = block_comment_end + 2
+                    state = STATE_NORMAL
+                else:
+                    raise Exception('alone slash')
         return new_s
 
     @staticmethod

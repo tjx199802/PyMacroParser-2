@@ -1,10 +1,9 @@
 # -*- coding:utf-8 -*-
-import os
-import sys
-sys.path.append(os.getcwd())
+
 
 import pytest
 from myparser.pymacroparser import Util, PyMacroParser
+
 
 class TestUtil:
 
@@ -18,15 +17,6 @@ class TestUtil:
 
     def test_find_all(self):
         pass
-
-    def test_remove_line_comment(self, unicode_str):
-        unicode_str = Util.remove_line_comment(unicode_str)
-        print(unicode_str)
-
-    def test_remove_block_comment(self, unicode_str):
-        unicode_str = Util.remove_line_comment(unicode_str)
-        unicode_str = Util.remove_block_comment(unicode_str)
-        print(unicode_str)
 
     def test_extract_directives(self, unicode_str):
         unicode_str = Util.remove_line_comment(unicode_str)
@@ -46,6 +36,20 @@ class TestUtil:
         for s in ss:
             print(s, ' --> ', Util.is_legal_identifier(s))
 
+    @pytest.mark.parametrize('src, dst',
+                             [('test/case/comment.cpp', 'test/case/comment_.cpp'),
+                             ('test/case/overall.cpp', 'test/case/overall_.cpp')])
+    def test_remove_comment(self, src, dst):
+        with open(src) as fr:
+            s = unicode(fr.read(), 'utf8')
+        new_s = Util.remove_comment(s)
+        with open(dst, 'w') as fw:
+            fw.write(new_s)
+
+class TestFind:
+    @staticmethod
+    def test_find_char_end(s, i):
+        pass
 class TestPyMacroParser:
     pass
 
@@ -99,7 +103,7 @@ def test_case1():
     a1.dump(filename)
     a2.load(filename)
     print(a2.dumpDict())
-    a1.preDefine("MC1;MC2") 
+    a1.preDefine("MC1;MC2")
     print(a1.dumpDict())
     a1.dump("test/c.cpp")
 
