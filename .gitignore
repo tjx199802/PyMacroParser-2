@@ -1,0 +1,7 @@
+__*
+.*/
+main*
+*.pyc
+passed
+*.log
+*.pdb
