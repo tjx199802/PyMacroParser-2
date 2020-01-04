@@ -1,3 +1,3 @@
-#define str1 R"("Hello \ world")"s
-#define str2 R"("Hello \ world")"
-#define str3 R"("Hello \ world")"
+#define str1 "aaa" "bbb" 
+#define str2 L"aaa" "bbb"
+#define str3 L"aaa" L"bbb"

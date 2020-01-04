@@ -1,11 +1,11 @@
 #ifndef MC_TEST
 #define MC_TEST
 
-
+//#define DATA  {0,0,100,23}
 #define CHARDATA  {'a', {'b'}, 23}
 #define STRDATA  {"god", "(hi),{how are [you]?}", ",", {"inner_{1}",{"inner_{2}", "inner_{2}_(1)"}}}
 
-   #define   COMSTRUCT   { {1, 2.0, "str"}, {'1', .0075e1f,    "\\\\\\\\\\\\\\\\\\//////////////////"},     { +0x1dCbAF, 1.2E+0,    "\v\'\"\f \"\n\r\t\b\a\\",},}    
+ /*test*/ #define /*middle_1***/ COMSTRUCT /*middle_2*/ { {1, 2.0, "str"}, {'1', .0075e1f,  /*test*/ "\\\\\\\\\\\\\\\\\\//////////////////"},   /*test*/ { +0x1dCbAF, 1.2E+0,  /*""*/ "\v\'\"\f \"\n\r\t\b\a\\",},}  /*enddd*/ //end
 
 #define special "'1~!@#$^&*()_+-={':[,]}|;.</>?"
   
@@ -31,21 +31,21 @@
 #define quote '"'
 #define quotes "&#34; (0x0022) 0x21 034 &#x22;"
 #define slash "/ &^ \\"
-#define _wide_str L"This is a string literal."
+#define _wide_str L"This is a string literal."//wide string "This is a string literal."
 
-#define splitstr "24'23't" "323df" 
-#define comment "// /* */<!-- --"
+#define splitstr "24'23't" "323df" //"123fg"
+#define comment/*I am a comment!*/"// /* */<!-- --"
 
 
-
- 
+//comment/*test*//
+/*comment//test*/
 
 #define trap "#define AA 123"
 
-#define backslash	'\\'
-#define tab_		'\t'
+#define backslash '\\'
+#define tab_  '\t'
 
-#define NS1 "with tab	"    
+#define NS1 "with tab "    
 #define NSRT "XXX \\tYYY\\nZZZZ \\n"
 
 #define testE 25E-4
@@ -57,12 +57,24 @@
 #define unsigned_intn 123u
 
 #define long_unsigned_intn 776255UL
-#define long_intn 4293955295L  
-#   define TT 123123
- #define _1X 32.0
+#define long_intn 4293955295L /* /*    
+//Stringizing Operator  (#) 
+#define stringer( x ) printf_s( #x "\\n" )
+
+#define _X 0200
+#define _Y 1234
+//#define F abc/
+#define B def
+
+#define DATA  {210,41,78.0,323,-457}
+
+/* */
+# /*321*/ define TT 123123
+/* 
+comment */#define _1X 32.0
 #define _1Y -48.970
 #define _XY {-23,41}
-#define _X 0100 
+#define _X 0100 //0ctal /* Constants
 #define _Y -0124
 
 #define COMPDATA  { {{1,3}, {2,3,5}, {31}},  {{12,016}, {1,30,0}}, 23 }
@@ -70,4 +82,4 @@
 
 #else
 
-#endif 
+#endif // !MC_TEST

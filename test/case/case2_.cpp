@@ -1,5 +1,28 @@
-#ifndef MC_TEST
-#define MC_TEST
+ 
+#  define c1 1
+#define c2   3
+#define c3 {'1',  3, {1,2,3,4,5}} 
+
+# define STR_A "/*Not a comment!*/" "/t a comment!" 
+#define CHAR_A '"'
+# define comment "/t a comment!"
+#define b   "adsa"
+#define c "\"//"
+#define x '"' 
+#define d  "//\"" 
+#        define c5   "adsa"   "dfsa"
+#define c6 "\"//"
+#define c7 L"//\"" 
+
+#define a   77
+#define b   "adsa"
+#    define  c  "\" //"
+#define x '"' 
+        
+#define d  "//\"" 
+# define comment "//  Not a comment!"  "Not a commemt!"
+#define e -16E9
+#define www {{1,2},{"dasdsad\"",1.5e6},{-13e9,+1.8E9f}}
 
 
 #define CHARDATA  {'a', {'b'}, 23}
@@ -34,7 +57,7 @@
 #define _wide_str L"This is a string literal."
 
 #define splitstr "24'23't" "323df" 
-#define comment "// /* */<!-- --"
+#define comment  "// /* */<!-- --"
 
 
 
@@ -42,10 +65,10 @@
 
 #define trap "#define AA 123"
 
-#define backslash	'\\'
-#define tab_		'\t'
+#define backslash '\\'
+#define tab_  '\t'
 
-#define NS1 "with tab	"    
+#define NS1 "with tab "    
 #define NSRT "XXX \\tYYY\\nZZZZ \\n"
 
 #define testE 25E-4
@@ -66,8 +89,3 @@
 #define _Y -0124
 
 #define COMPDATA  { {{1,3}, {2,3,5}, {31}},  {{12,016}, {1,30,0}}, 23 }
-
-
-#else
-
-#endif 

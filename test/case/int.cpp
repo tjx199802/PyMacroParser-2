@@ -1,4 +1,4 @@
-#define int1 '\" '
-#define int2 '\"  '
-#define int3 'kkkk'
-#define int4 '" '
+#define int1 -12
+#define int2 -012
+#define int3 -0x12
+#define int4 -0x12u

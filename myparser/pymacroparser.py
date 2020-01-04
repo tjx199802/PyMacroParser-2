@@ -1,6 +1,17 @@
 # -*- coding:utf-8 -*-
-"""PyMacroParser"""
-from myparser.log import logger
+"""PyMacroParser
+
+Condition:
+-   All source files compile successfully.
+-   All strings are ANSI encoded.
+
+Suppose:
+-   There are no identifiers with parameters.
+-   There are no raw string.
+-   All characters are ASCII characters.
+-   There are no wstring concatenation.
+"""
+# from myparser.log import logger
 
 
 class ConstantException(Exception):
@@ -40,6 +51,51 @@ class PreprocessorType:
 
 class Find:
     @staticmethod
+    def find_comma(s, start, end):
+        i = start
+        while i < end:
+            if s[i] == u'\'':
+                i = Find.find_char_end(s, i) + 1
+            elif s[i] == u'\"':
+                i = Find.find_string_end(s, i) + 1
+            elif s[i] == u',':
+                return i
+            else:
+                i += 1
+        return -1
+
+    @staticmethod
+    def find_all(s, sub):
+        sub_indexes = []
+        index = s.find(sub)
+        while index != -1:
+            sub_indexes.append(index)
+            index = s.find(sub, index + 1)
+        return sub_indexes
+
+    @staticmethod
+    def find_identifier(d):
+        """Find a potential macro name identifier from str d.
+
+        Suppose there are no identifiers with parameters
+
+        Arguments:
+        d -- unicode, a directive with header removed, without blank ends
+        """
+        start, end = Find.findword(d, 0, len(d))
+        return start, end
+
+    @staticmethod
+    def findword(s, start, end):
+        while start < end and s[start].isspace():
+            start += 1
+        word_start = start
+        while start < end and not s[start].isspace():
+            start += 1
+        word_end = start
+        return [word_start, word_end]
+
+    @staticmethod
     def find_string_end(s, i):
         """Find the end of the string.
 
@@ -52,18 +108,17 @@ class Find:
                     string end is found.
         """
         # Determine the type of string: normal string or raw string
-        string_type = Judge.string_type(s, i)
-        if string_type == StringType.NORMAL_STRING:
-            return Find.find_normal_string_end(s, i)
-        return Find.find_raw_string_end(s, i)
+
+        return Find.find_normal_string_end(s, i)
 
     @staticmethod
     def find_normal_string_end(s, i):
-        while True:
-            dq_index = s.find(u'"', i + 1)
-            if not Judge.is_escaped(s, dq_index):
-                return dq_index
-            i = dq_index
+        start = i + 1
+        while s[start] != u'\n':
+            if s[start] == u'\"' and not Judge.is_escaped(s, start):
+                return start
+            start += 1
+        raise ConstantException('No string end.')
 
     @staticmethod
     def find_raw_string_end(s, i):
@@ -75,11 +130,13 @@ class Find:
 
     @staticmethod
     def find_char_end(s, i):
-        while True:
-            q_index = s.find(u'\'', i + 1)
-            if not Judge.is_escaped(s, q_index):
-                return q_index
-            i = q_index
+        start = i + 1
+        while s[start] != u'\n':
+            if s[start] == u'\'' and not Judge.is_escaped(s, start):
+                return start
+            start += 1
+        raise ConstantException('No char end.')
+
 
 class Judge:
     @staticmethod
@@ -97,7 +154,7 @@ class Judge:
     @staticmethod
     def is_escaped(s, i):
         """Determine whether the ith character of string i is escaped.
-        
+
         s -- unicode
         i -- int
         """
@@ -107,42 +164,104 @@ class Judge:
             i -= 1
         return bool(num_escape % 2)
 
+    @staticmethod
+    def judge_Ctype(s):
+        s = s.strip()
+        if not s:
+            return Ctype.SPACE
+        if Judge.isbool(s):
+            return Ctype.BOOL
+        if Judge.isint(s):
+            return Ctype.INT
+        if Judge.ischar(s):
+            return Ctype.CHAR
+        if Judge.isfloat(s):
+            return Ctype.FLOAT
+        if Judge.isstring(s):
+            return Ctype.STRING
+        if Judge.iswstring(s):
+            return Ctype.WSTRING
+        if Judge.istuple(s):
+            return Ctype.TUPLE
+        else:
+            raise PreprocessorSytaxException('illegal ctype')
+
+    @staticmethod
+    def isbool(s):
+        return s == u'true' or s == u'false'
+
+    @staticmethod
+    def isint(s):
+        if s[0] == u'-' or s[0] == u'+':
+            s = s[1:]
+        if s[0].isdigit() and s.find(u'.') == -1 and \
+                s.find(u'e') == -1 and s.find(u'E') == -1:
+            return True
+        return False
+
+    @staticmethod
+    def ischar(s):
+        if s.endswith(u'\''):
+            return True
+        return False
+
+    @staticmethod
+    def isfloat(s):
+        if s[0] == u'-' or s[0] == u'+':
+            s = s[1:]
+        if s[0].isdigit() or s[0] == u'.':
+            if s.find(u'.') != -1 or s.find(u'e') != -1 or s.find(u'E') != -1:
+                return True
+        return False
+
+    @staticmethod
+    def isstring(s):
+        if (s.endswith(u'"') or s.endswith(u'"s')) and not s.startswith(u'L'):
+            return True
+        return False
+
+    @staticmethod
+    def iswstring(s):
+        s = s.strip()
+        if s[0] == u'L':
+            return True
+        return False
+
+    @staticmethod
+    def istuple(s):
+        s = s.strip()
+        if s.startswith(u'{'):
+            return True
+        return False
+
+
 class Util:
 
     @staticmethod
-    def find_all(s, sub):
-        sub_indexes = []
-        index = s.find(sub)
-        while index != -1:
-            sub_indexes.append(index)
-            index = s.find(sub, index + 1)
-        return sub_indexes
+    def tuple_skeleton(s):
+        """Match curly brackets.
 
-    @staticmethod
-    def find_identifier(d):
-        """Find a potential macro name identifier from str d."""
-        word_start, word_end = Util.findword(d, 0, len(d))
-        if not word_start < word_end:
-            raise PreprocessorSytaxException()
-        left_bracket_index = d.find(u'(', word_start, word_end)
-        if left_bracket_index == -1:
-            if Util.is_legal_single_identifier(d[word_start:word_end]):
-                return word_start, word_end
+        Arguments:
+        s -- unicode, begins with '{', ends with '}'
+        """
+        sk = {}
+        stack = []
+        i = 0
+        while i < len(s):
+            if s[i] == u'{':
+                stack.append(i)
+                i += 1
+            elif s[i] == u'\'':
+                i = Find.find_char_end(s, i) + 1
+            elif s[i] == u'\"':
+                i = Find.find_string_end(s, i) + 1
+            elif s[i] == u'}':
+                sk[stack.pop()] = i
+                i += 1
             else:
-                raise PreprocessorSytaxException()
-        if left_bracket_index != -1:
-            if not Util.is_legal_single_identifier(d[word_start:left_bracket_index]):
-                raise PreprocessorSytaxException()
-            right_bracket_index = d.find(u')', left_bracket_index)
-            if right_bracket_index == -1:
-                raise PreprocessorSytaxException()
-            else:
-                arguments = d[left_bracket_index,
-                              right_bracket_index].split(u',')
-                for argument in arguments:
-                    if not Util.is_legal_single_identifier(argument.strip()):
-                        return PreprocessorSytaxException()
-                return word_start, right_bracket_index
+                i += 1
+        assert stack == [], 'unmatched curly brackets'
+        return sk
 
     @staticmethod
     def remove_comment(s):
@@ -161,9 +280,9 @@ class Util:
             c = s[i]
             if state == STATE_NORMAL:
                 if c == u'"':
-                    logger.info("This is the beginning of the string.")
+                    # logger.info("This is the beginning of the string.")
                     string_end = Find.find_string_end(s, i)
-                    logger.info('string: ' + str(i) + str(string_end))
+                    # logger.info('string: ' + str(i) + str(string_end))
                     assert string_end != -1, 'incomplete string'
                     if string_end == len(s) - 1:
                         new_s += s[i:]
@@ -171,7 +290,7 @@ class Util:
                         new_s += s[i:string_end + 1]
                     i = string_end + 1
                 elif c == u'\'':
-                    logger.info("This is the beginning of the char.")
+                    # logger.info("This is the beginning of the char.")
                     char_end = Find.find_char_end(s, i)
                     assert char_end != -1, 'incomplete char'
                     if char_end == len(s) - 1:
@@ -187,16 +306,17 @@ class Util:
                     i += 1
             elif state == STATE_SLASH:
                 if c == u'/':
-                    logger.info("This is the beginning of a line comment.")
+                    # logger.info("This is the beginning of a line comment.")
                     newline_index = s.find(u'\n', i)
                     if newline_index == -1:
                         break
                     i = newline_index
                     state = STATE_NORMAL
                 elif c == u'*':
-                    logger.info("This is the beginning of a block comment.")
+                    # logger.info("This is the beginning of a block comment.")
                     block_comment_end = s.find(u'*/', i + 1)
                     assert block_comment_end != -1, 'incomplete block comment'
+                    new_s += u' '
                     i = block_comment_end + 2
                     state = STATE_NORMAL
                 else:
@@ -205,12 +325,17 @@ class Util:
 
     @staticmethod
     def extract_directives(s):
+        """Extract all directives into a list.
+
+        Suppose all directives are legal.
+        """
         directives = [Util.formalize_directive(d)
                       for d in s.split(u'\n') if d.strip()]
-        if Check.check_directives(directives):
-            return directives
-        else:
-            raise PreprocessorSytaxException()
+        return directives
+        # if Check.check_directives(directives):
+        #     return directives
+        # else:
+        #     raise PreprocessorSytaxException()
 
     @staticmethod
     def formalize_directive(d):
@@ -274,25 +399,8 @@ class Util:
 
     @staticmethod
     def c2p_judge_Ctype(s):
-        # logger.info('s --> ' + s)
-        if not s:
-            return Ctype.SPACE
-        if s == u'true' or s == u'false':
-            return Ctype.BOOL
-        if s.isalnum():
-            return Ctype.INT
-        if s.startswith(u"'") and s.endswith(u"'") and len(s) == 3:
-            return Ctype.CHAR
-        if Util.isfloat(s):
-            return Ctype.FLOAT
-        if s.startswith(u'"') and s.endswith(u'"'):
-            return Ctype.STRING
-        if s.startswith(u'L"') and s.endswith(u'"'):
-            return Ctype.WSTRING
-        if s.startswith(u'{') and s.endswith(u'}'):
-            return Ctype.TUPLE
-        else:
-            return Ctype.ILLEGAL
+        """Judge Ctype"""
+        return Judge.judge_Ctype(s)
 
     @staticmethod
     def p2c_judge_type(s):
@@ -304,16 +412,6 @@ class Util:
         for k in d:
             d_cp[k] = d[k]
         return d_cp
-
-    @staticmethod
-    def findword(s, start, end):
-        while start < end and s[start].isspace():
-            start += 1
-        word_start = start
-        while start < end and not s[start].isspace():
-            start += 1
-        word_end = start
-        return [word_start, word_end]
 
     @staticmethod
     def is_legal_identifier(s):
@@ -395,24 +493,24 @@ class Execute:
 
     @staticmethod
     def execute_define(d, macros):
-        d = d[7:]
-        macro_name_start, macro_name_end = Util.find_identifier(d)
-        macro_name = d[macro_name_start:macro_name_end]
+        d = d.strip()[7:]
+        macro_name_start, macro_name_end = Find.find_identifier(d)
+        macro_name = str(d[macro_name_start:macro_name_end])
         macros[macro_name] = Convert.c2p(d[macro_name_end:])
 
     @staticmethod
     def execute_undef(d, macros):
-        d = d[6:]
-        macro_name_start, macro_name_end = Util.find_identifier(d)
-        macro_name = d[macro_name_start:macro_name_end]
+        d = d.strip()[6:]
+        macro_name_start, macro_name_end = Find.find_identifier(d)
+        macro_name = str(d[macro_name_start:macro_name_end])
         if macro_name in macros:
             macros.pop(macro_name)
 
     @staticmethod
     def execute_ifdef(directives, start, directives_skeleton, macros):
-        d = directives[start][6:]
-        macro_name_start, macro_name_end = Util.find_identifier(d)
-        macro_name = d[macro_name_start:macro_name_end]
+        d = directives[start].strip()[6:]
+        macro_name_start, macro_name_end = Find.find_identifier(d)
+        macro_name = str(d[macro_name_start:macro_name_end])
         if macro_name in macros:
             if 'else' in directives_skeleton[start]:
                 Execute.__execute_directives(directives, start + 1,
@@ -431,9 +529,9 @@ class Execute:
 
     @staticmethod
     def execute_ifndef(directives, start, directives_skeleton, macros):
-        d = directives[start][7:]
-        macro_name_start, macro_name_end = Util.find_identifier(d)
-        macro_name = d[macro_name_start:macro_name_end]
+        d = directives[start].strip()[7:]
+        macro_name_start, macro_name_end = Find.find_identifier(d)
+        macro_name = str(d[macro_name_start:macro_name_end])
         if macro_name not in macros:
             if 'else' in directives_skeleton[start]:
                 Execute.__execute_directives(directives, start + 1,
@@ -528,13 +626,24 @@ class Check:
 
 
 class Convert:
+    ESCAPE_MAP = {
+        u'\\a': u'\a',
+        u'\\b': u'\b',
+        u'\\f': u'\f',
+        u'\\n': u'\n',
+        u'\\r': u'\r',
+        u'\\t': u'\t',
+        u'\\v': u'\v',
+        u'\\\'': u'\'',
+        u'\\"': u'\"',
+        u'\\\\': u'\\',
+    }
+    UNESCAPE_MAP = {v: k for k, v in ESCAPE_MAP.items()}
+
     @staticmethod
     def c2p(s):
         s = s.strip()
-        ctype = Util.c2p_judge_Ctype(s)
-        if ctype == Ctype.ILLEGAL:
-            raise ConstantException()
-        elif ctype == Ctype.TUPLE:
+        if Judge.istuple(s):
             return Convert.c2p_tuple(s)
         else:
             return Convert.c2p_word(s)
@@ -552,32 +661,104 @@ class Convert:
 
     @staticmethod
     def c2p_int(s):
-        if s.startswith(u'0x'):
-            return int(s, 16)
+        # Judge positive or negative.
+        flag = 1
+        if s[0] == u'-':
+            s = s[1:]
+            flag = -1
+        elif s[0] == u'+':
+            s = s[1:]
+        # Remove suffix.
+        i = len(s) - 1
+        while i >= 0 and (not s[i].isdigit() and not (s[i] >= u'a' and s[i] <= u'f') and
+                          not (s[i] >= u'A' and s[i] <= u'F')):
+            i -= 1
+        s = s[:i + 1]
+
+        if s.startswith(u'0x') or s.startswith(u'0X'):
+            return flag * int(s, 16)
+        elif s.startswith(u'0'):
+            return flag * int(s, 8)
         else:
-            return int(s)
+            return flag * int(s)
 
     @staticmethod
     def c2p_char(s):
+        """Only consider ascii characters."""
+        if s[1] == u'\\':
+            if s[2] == u'x':
+                return int(u'0x' + s[3:-1], 16)
+            elif s[2].isdigit():
+                return int(u'0' + s[2:-1], 8)
+            else:
+                return ord(Convert.ESCAPE_MAP[s[1:3]])
         return ord(s[1])
 
     @staticmethod
     def c2p_float(s):
-        if s.endswith(u'f'):
-            s = s[:-1]
-        return float(s)
+        flag = 1
+        if s[0] == u'-':
+            s = s[1:]
+            flag = -1
+        elif s[0] == u'+':
+            s = s[1:]
+        # remove suffix
+        i = len(s) - 1
+        while i >= 0 and (not s[i].isdigit() and s[i] != u'.'):
+            i -= 1
+        s = s[:i + 1]
+
+        e_index = s.find(u'e')
+        E_index = s.find(u'E')
+        if e_index != -1:
+            return flag * float(s[:e_index]) * (10 ** int(s[e_index + 1:]))
+        if E_index != -1:
+            return flag * float(s[:E_index]) * (10 ** int(s[E_index + 1:]))
+        return flag * float(s)
 
     @staticmethod
     def c2p_string(s):
-        return str(s[1:-1])
+        new_s = u''
+        i = 0
+        while i < len(s):
+            start = s.find(u'\"', i)
+            if start != -1:
+                end = Find.find_string_end(s, start)
+                word = s[start:end + 1]
+                word = word[1:-1]
+                i = end + 1
+                j = 0
+                new_word = u''
+                while j < len(word):
+                    if word[j] == u'\\' and j + 1 < len(word) and \
+                            word[j:j+2] in Convert.ESCAPE_MAP:
+                        new_word += Convert.ESCAPE_MAP[word[j:j+2]]
+                        j += 2
+                    else:
+                        new_word += word[j]
+                        j += 1
+            new_s += new_word
+        return str(new_s)
 
     @staticmethod
     def c2p_wstring(s):
-        return s[2:-1]
+        s = s[2:-1]
+        i = 0
+        new_s = u''
+        while i < len(s):
+            if s[i] == u'\\' and i + 1 < len(s) and \
+                    s[i:i+2] in Convert.ESCAPE_MAP:
+                new_s += Convert.ESCAPE_MAP[s[i:i+2]]
+                i += 2
+            else:
+                new_s += s[i]
+                i += 1
+        return new_s
 
     @staticmethod
     def c2p_tuple(s):
         def recursion_c2p_tuple(s, start, end, braces_indexes, group):
+            # print(s[start:end])
             while start < end:
                 c = s[start]
                 if not c.isspace() and not c == u',':
@@ -588,26 +769,20 @@ class Convert:
                         start = braces_indexes[start] + 1
                     else:
                         word = None
-                        comma_index = s.find(u',', start + 1, end)
+                        comma_index = Find.find_comma(s, start, end)
                         if comma_index == -1:
                             word = s[start:end].strip()
                             start = end
                         else:
                             word = s[start:comma_index].strip()
                             start = comma_index + 1
+                        # print(word)
                         obj = Convert.c2p_word(word)
                         group.append(obj)
                 else:
                     start += 1
-
-        braces_indexes = {}
-        stack = []
-        for i, c in enumerate(s):
-            if c == u'{':
-                stack.append(i)
-            elif c == u'}':
-                braces_indexes[stack.pop()] = i
-
+        s = s.strip()
+        braces_indexes = Util.tuple_skeleton(s)
         # logger.info(braces_indexes)
         group = []
         recursion_c2p_tuple(s, 1, len(s) - 1, braces_indexes, group)
@@ -622,7 +797,7 @@ class Convert:
         obj = None
         if ctype == Ctype.SPACE:
             Convert.c2p_space(s)
-        if ctype == Ctype.BOOL:
+        elif ctype == Ctype.BOOL:
             obj = Convert.c2p_bool(s)
         elif ctype == Ctype.INT:
             obj = Convert.c2p_int(s)
@@ -643,6 +818,8 @@ class Convert:
             s = Convert.p2c_bool(o)
         elif isinstance(o, int):
             s = Convert.p2c_int(o)
+        elif isinstance(o, long):
+            s = Convert.p2c_long(o)
         elif isinstance(o, float):
             s = Convert.p2c_float(o)
         elif isinstance(o, str):
@@ -662,16 +839,26 @@ class Convert:
         return str(o)
 
     @staticmethod
+    def p2c_long(o):
+        return str(o)
+
+    @staticmethod
     def p2c_float(o):
         return str(o)
 
     @staticmethod
     def p2c_string(o):
-        return '"' + o + '"'
+        s = ''
+        for c in o:
+            if c in Convert.UNESCAPE_MAP:
+                s += Convert.UNESCAPE_MAP[c]
+            else:
+                s += c
+        return '"' + s + '"'
 
     @staticmethod
     def p2c_wstring(o):
-        return 'L"' + str(o) + '"'
+        return 'L' + Convert.p2c_string(str(o))
 
     @staticmethod
     def p2c_tuple(o):
@@ -704,6 +891,9 @@ class PyMacroParser:
         Arguments:
         f -- str, file path
         """
+        self._directives = []
+        self._predefine = []
+        self._macros = {}
         self._preprocessing(f)
         self._parser()
 
@@ -719,7 +909,8 @@ class PyMacroParser:
         self._predefine = []
         macros = s.split(';')
         for macro in macros:
-            self._predefine.append('#define ' + macro)
+            if not macro.isspace():
+                self._predefine.append('#define ' + macro)
         self._parser()
 
     def dumpDict(self):
