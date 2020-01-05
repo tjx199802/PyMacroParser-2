@@ -30,7 +30,12 @@ class SourceSyntaxException(Exception):
 class Util:
     @staticmethod
     def execute_directives(directives):
-        effective = True
+        """Execute directives using stack.
+
+        Arguments:
+        directives -- list
+        """
+        effective = True  # record current state
         ifstack = []
         macros = {}
         for d in directives:
@@ -40,6 +45,7 @@ class Util:
                     identifier = str(d[i_start:i_end])
                     macros[identifier] = Convert.c2p(d[i_end:])
                 elif d.startswith(u'#undef'):
+                    # suppose character exists after '#undef' by default
                     i_start, i_end = Find.find_identifier(d)
                     identifier = str(d[i_start:i_end])
                     if identifier in macros:

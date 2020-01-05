@@ -137,35 +137,3 @@ def test_load_dump(a_parser, src):
 
 if __name__ == "__main__":
     pass
-    # test_case1()
-    # test_str()
-    # test_isfloat()
-    # test_list2tuple()
-
-    # test_util_group_c2p()
-    # test_find_all()
-    # f = 'test/a.cpp'
-
-    # p = PyMacroParser()
-    # p.load(f)
-    # print(p.dumpDict())
-    # p.dump('test/b.cpp')
-    # p.preDefine("MC1;MC2")
-    # print(p.dumpDict())
-    # p.dump('test/b.cpp')
-    # print('Done!')
-    # with open(f) as fr:
-    #     content = unicode(fr.read(), 'utf-8')
-
-    # line_coment_indexes = Util.find_all(content, u'//')
-    # content1 = Util.remove_line_comment(content, line_coment_indexes)
-    # # print(content1)
-    # block_coment_start_indexes = Util.find_all(content1, u'/*')
-    # block_coment_end_indexes = Util.find_all(content1, u'*/')
-    # content2 = Util.remove_block_comment(content1, block_coment_start_indexes,
-    #                                      block_coment_end_indexes)
-    # # print(content2)
-    # directives = Util.extract_directives(content2)
-    # # for d in directives:
-    # #     print(d)
-    # # # print(directives)
