@@ -43,3 +43,7 @@ python -- c
 
 首先记录每个if指令（#ifdef,#ifndef）的结尾（#endif），和可能存在分支（#else）
 具体执行时遇到if指令时，根据判断的结果直接跳到其结尾或分支。
+
+字符串常量中不能有换行符，以下不合法：
+#define string_with_comment_symbol_1 "// /// 
+////"
