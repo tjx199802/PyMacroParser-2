@@ -4,7 +4,7 @@
 #ifdef MC1
 
 #define data1 0x20
-#define  data2 2.5f
+ #define   data2 2.5f
 #define data3 L"this is a data"
 #define data4 true
 
@@ -24,7 +24,7 @@
 
 #else
 
-#define data1 1.0f  
+#define data1 1.0f   
 
 #define data2 2
 #define data3  false

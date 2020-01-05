@@ -1,8 +1,15 @@
 # Macro parser
 
-假设：
--   
 
+Condition:
+-   All source files compile successfully.
+-   All strings are ANSI encoded.
+
+Suppose:
+-   There are no identifiers with parameters.
+-   There are no raw string.
+-   All characters are ASCII characters.
+-   There are no wstring concatenation.
 
 ## 读文件：
 

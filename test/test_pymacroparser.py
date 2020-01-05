@@ -2,29 +2,16 @@
 
 
 import pytest
-from myparser.pymacroparser import Util, PyMacroParser, Convert, Find, Judge
 from myparser.log import logger
+from myparser.pymacroparser import Util, PyMacroParser, Convert, Find, Judge
+
+
+@pytest.fixture
+def a_parser():
+    return PyMacroParser()
 
 
 class TestUtil:
-
-    @pytest.mark.parametrize(('src'), [('test/case/tuple.data')])
-    def test_tuple_skeleton(self, src):
-        with open(src) as fr:
-            ss = unicode(fr.read(), 'utf8').split(u'\n')
-        for s in ss:
-            print(Util.tuple_skeleton(s))
-
-    @pytest.fixture(scope='class')
-    def unicode_str(self):
-        f = 'test/b.cpp'
-        with open(f) as fr:
-            unicode_str = unicode(fr.read(), 'utf-8')
-        print(unicode_str)
-        return unicode_str
-
-    def test_find_all(self):
-        pass
 
     @pytest.mark.parametrize('src, dst',
                              [('test/case/comment_.cpp', 'test/case/comment_e.cpp'),
@@ -39,15 +26,6 @@ class TestUtil:
             for d in ds:
                 fw.write(d + u'\n')
 
-    def test_findword(self):
-        pass
-
-    def test_is_legal_identifier(self):
-        # ss = ['data1', '_data', '7data', 'da_dk7']
-        ss = ['MC_TEST']
-        for s in ss:
-            print(s, ' --> ', Util.is_legal_identifier(s))
-
     @pytest.mark.parametrize('src, dst', [
         ('test/case/comment.cpp', 'test/case/comment_.cpp'),
         ('test/case/overall.cpp', 'test/case/overall_.cpp'),
@@ -61,21 +39,14 @@ class TestUtil:
         with open(dst, 'w') as fw:
             fw.write(new_s)
 
+    def test_list2tuple(self):
+        group = [[2.0, u'"abc"'], [
+            1.5, [11, [u'"kkk', 8]], u'"def"'], [5.6, u'"7.2"']]
+        group = Util.list2tuple(group)
+        print(group)
+
 
 class TestFind:
-    @pytest.mark.parametrize(('src'), [('test/case/tuple.cpp')])
-    def test_find_comma(self, src):
-        with open(src) as fr:
-            ss = unicode(fr.read(), 'utf8').split(u'\n')
-        for s in ss:
-            c = 0
-            i = Find.find_comma(s, 0, len(s))
-            while i != -1:
-                # print(str(i) + u'\t' + s[i-1:i+2])
-                i = Find.find_comma(s, i + 1, len(s))
-                c += 1
-            print(c)
-
     def test_find_char_end(self, s, i):
         pass
 
@@ -104,17 +75,17 @@ class TestConvert:
         pass
 
     @pytest.mark.parametrize(('src'), [('test/case/tuple.data')])
-    def test_c2p_tuple(self, src):
+    def test_c2p_aggregate(self, src):
         with open(src) as fr:
             ss = unicode(fr.read(), 'utf8').split(u'\n')
         m = {}
         for s in ss:
-            m[s] = Convert.c2p_tuple(s)
+            m[s] = Convert.c2p_aggregate(s)
         print(m)
 
     @pytest.mark.parametrize('src', [('test/case/overall.data'),
                                      ('test/case/string.cpp')])
-    def test_c2p_word(self, src):
+    def test_c2p_constant(self, src):
         with open(src) as fr:
             s = unicode(fr.read(), 'utf8')
         ds = s.split(u'\n')
@@ -122,73 +93,12 @@ class TestConvert:
         for i, d in enumerate(ds):
             d = d[1:].strip()
             if not d.startswith(u'{'):
-                m[d] = Convert.c2p_word(d)
+                m[d] = Convert.c2p_constant(d)
         logger.info(m)
 
 
 class TestJudge:
-    @pytest.mark.parametrize('src, dst',
-                             [('test/case/overall_e.cpp', 'test/case/overall.data'),
-                              ('test/case/tuple.cpp', 'test/case/tuple.data')])
-    def test_judge_Ctype(self, src, dst):
-        with open(src) as fr:
-            s = unicode(fr.read(), 'utf8')
-        ds = s.split(u'\n')
-        fw = open(dst, 'w')
-        for d in ds:
-            if d.startswith(u'#define'):
-                d = d[7:].strip()
-                i_s, i_e = Find.find_identifier(d)
-                # identifier = d[i_s:i_e]
-                ctype = Judge.judge_Ctype(d[i_e:])
-                # fw.write(str(ctype))
-                # fw.write('\t')
-                # fw.write(identifier)
-                # fw.write('\t')
-                fw.write(d[i_e:])
-                fw.write('\n')
-        fw.close()
-
-
-def test_find_all(content):
-    line_coment_indexes = Util.find_all(content, u'//')
-    block_coment_start_indexes = Util.find_all(content, u'/*')
-    block_coment_end_indexes = Util.find_all(content, u'*/')
-    print(line_coment_indexes)
-    print(block_coment_start_indexes)
-    print(block_coment_end_indexes)
-    return [line_coment_indexes, block_coment_start_indexes,
-            block_coment_end_indexes]
-
-
-def test_util_group_c2p():
-    s = u'{ {2.0, "abc"}, {1.5, "def"}, {5.6f, "7.2"}}'
-    # group = Util.group_c2p(s)
-    # print(group)
-
-
-def test_list2tuple():
-    group = [[2.0, u'"abc"'], [
-        1.5, [11, [u'"kkk', 8]], u'"def"'], [5.6, u'"7.2"']]
-    group = Util.list2tuple(group)
-    print(group)
-
-
-def test_isfloat():
-    ss = [u'0.5', u'7.2', u'8f', u'.5f', u'5.f', u'kk', u'"7.2"']
-    for s in ss:
-        print(s, Util.isfloat(s))
-
-
-def test_str():
-    s = 'k'
-
-    print(s)
-
-
-@pytest.fixture
-def a_parser():
-    return PyMacroParser()
+    pass
 
 
 @pytest.mark.parametrize(('src, dst'), [
@@ -206,25 +116,28 @@ def test_case(a_parser, src, dst):
     a_parser.load(src)
     a_parser.dump(dst)
 
-@pytest.mark.parametrize(('src'),[
+
+@pytest.mark.parametrize(('src'), [
     ('test/case/case1.o.cpp')
 ])
 def test_load_dump(a_parser, src):
     a_parser.load(src)
     d1 = a_parser.dumpDict()
     a_parser.dump(src)
-    
+
     a_parser.load(src)
     d2 = a_parser.dumpDict()
     a_parser.dump(src)
-    
+
     a_parser.load(src)
     d3 = a_parser.dumpDict()
 
-    assert d1 == d2 and d2 == d3    
+    assert d1 == d2 and d2 == d3
+
 
 if __name__ == "__main__":
-    test_case1()
+    pass
+    # test_case1()
     # test_str()
     # test_isfloat()
     # test_list2tuple()

@@ -1,41 +1,160 @@
 # -*- coding:utf-8 -*-
-"""PyMacroParser
-
-Condition:
--   All source files compile successfully.
--   All strings are ANSI encoded.
-
-Suppose:
--   There are no identifiers with parameters.
--   There are no raw string.
--   All characters are ASCII characters.
--   There are no wstring concatenation.
-"""
-# from myparser.log import logger
+"""PyMacroParser"""
 
 
 class ConstantException(Exception):
+    """Exception about constant of cpp basic type."""
     pass
+
+
+class AggregateException(Exception):
+    """Exception about cpp aggregate."""
+    pass
+
 
 class IdentifierException(Exception):
+    """Exception about cpp identifier."""
     pass
+
 
 class DirectiveHeaderException(Exception):
+    """Exception about ilegal directive type."""
     pass
+
 
 class SourceSyntaxException(Exception):
+    """Exception about other cpp source syntax."""
     pass
 
-class Ctype:
-    ILLEGAL = 0
-    SPACE = 1
-    BOOL = 2
-    INT = 3
-    CHAR = 4
-    FLOAT = 5
-    STRING = 6
-    WSTRING = 7
-    TUPLE = 8
+
+class Util:
+    @staticmethod
+    def execute_directives(directives):
+        effective = True
+        ifstack = []
+        macros = {}
+        for d in directives:
+            if effective:
+                if d.startswith(u'#define'):
+                    i_start, i_end = Find.find_identifier(d)  # can handle execption
+                    identifier = str(d[i_start:i_end])
+                    macros[identifier] = Convert.c2p(d[i_end:])
+                elif d.startswith(u'#undef'):
+                    i_start, i_end = Find.find_identifier(d)
+                    identifier = str(d[i_start:i_end])
+                    if identifier in macros:
+                        macros.pop(identifier)
+                elif d.startswith(u'#ifdef'):
+                    i_start, i_end = Find.find_identifier(d)
+                    identifier = str(d[i_start:i_end])
+                    ifstack.append(effective)
+                    effective = identifier in macros
+                elif d.startswith(u'#ifndef'):
+                    i_start, i_end = Find.find_identifier(d)
+                    identifier = str(d[i_start:i_end])
+                    ifstack.append(effective)
+                    effective = identifier not in macros
+                elif d.startswith(u'#else'):
+                    effective = not effective
+                elif d.startswith(u'#endif'):
+                    effective = ifstack.pop()
+            else:
+                if d.startswith(u'#ifdef'):
+                    ifstack.append(effective)
+                elif d.startswith(u'#ifndef'):
+                    ifstack.append(effective)
+                elif d.startswith(u'#else'):
+                    effective = ifstack[-1]
+                elif d.startswith(u'#endif'):
+                    effective = ifstack.pop()
+        if ifstack:
+            raise SourceSyntaxException('branches error')
+        return macros
+
+    @staticmethod
+    def remove_comment(s):
+        """Remove C/C++ comment.
+
+        Arguments:
+        s - - unicode
+        """
+        i = 0
+        new_s = u''
+        while i < len(s):
+            c = s[i]
+            if c == u'\"':
+                string_end = Find.find_string_end(s, i)  # can handle exception
+                new_s += s[i:string_end + 1]
+                i = string_end + 1
+            elif c == u'\'':
+                char_end = Find.find_char_end(s, i)  # can handle exception
+                new_s += s[i:char_end + 1]
+                i = char_end + 1
+            elif c == u'/':
+                i += 1
+                c = s[i]
+                if c == u'/':
+                    # line comment begins
+                    newline_index = s.find(u'\n', i + 1)
+                    if newline_index == -1:
+                        i = len(s)
+                    else:
+                        i = newline_index
+                elif c == u'*':
+                    # block comment begins
+                    block_comment_end = s.find(u'*/', i + 1)
+                    if block_comment_end == -1:
+                        raise SourceSyntaxException(
+                            'block comment without ending')
+                    new_s += u' '
+                    i = block_comment_end + 2
+                else:
+                    raise SourceSyntaxException('alone slash')
+            else:
+                new_s += c
+                i += 1
+        return new_s
+
+    @staticmethod
+    def extract_directives(s):
+        """Extract all directives into a list.
+
+        Suppose all directives are legal.
+        """
+        directives = [Util.formalize_directive(d)
+                      for d in s.split(u'\n') if d.strip()]
+        # TODO handle exception
+        return directives
+
+    @staticmethod
+    def formalize_directive(d):
+        """If d(unicode) starts with '#', remove the spaces following it."""
+        d = d.strip()
+        if d.startswith(u'#'):
+            start = 1
+            while start < len(d) and d[start].isspace():
+                start += 1
+            d = u'#' + d[start:]
+        return d
+
+    @staticmethod
+    def list2tuple(group):
+        def recursion_l2t(group):
+            # group = tuple(group)
+            for i in range(len(group)):
+                if isinstance(group[i], list):
+                    recursion_l2t(group[i])
+                    group[i] = tuple(group[i])
+            # return group
+        recursion_l2t(group)
+        return tuple(group)
+
+    @staticmethod
+    def deepcopy(d):
+        d_cp = {}
+        for k in d:
+            d_cp[k] = d[k]
+        return d_cp
 
 
 class Find:
@@ -63,17 +182,18 @@ class Find:
         Suppose there are no identifiers with parameters
 
         Arguments:
-        d -- unicode, a directive with header removed, without blank ends
+        d - - unicode, a directive with header removed, without blank ends
         """
         start = d.find(u'#')
         while start < len(d) and not d[start].isspace():
             start += 1
-        i_start, i_end = Find.findword(d, start, len(d))
-        
-        return i_start, i_end
+        i_start, i_end = Find.find_word(d, start, len(d))
+        if Judge.isidentifier(d[i_start:i_end]):
+            return i_start, i_end
+        raise IdentifierException()
 
     @staticmethod
-    def findword(s, start, end):
+    def find_word(s, start, end):
         while start < end and s[start].isspace():
             start += 1
         word_start = start
@@ -89,12 +209,12 @@ class Find:
         All characters in string constant must be on the same line.
 
         Arguments:
-        s -- unicode
-        i -- the index of the string beginning(left double quotation)
+        s - - unicode
+        i - - the index of the string beginning(left double quotation)
         """
         start = i + 1
         while start < len(s) and s[start] != u'\n':
-            if s[start] == u'\"' and not Judge.is_escaped(s, start):
+            if s[start] == u'\"' and not Judge.isescaped(s, start):
                 return start
             start += 1
         raise ConstantException('No string end.')
@@ -103,7 +223,7 @@ class Find:
     def find_char_end(s, i):
         start = i + 1
         while start < len(s) and s[start] != u'\n':
-            if s[start] == u'\'' and not Judge.is_escaped(s, start):
+            if s[start] == u'\'' and not Judge.isescaped(s, start):
                 return start
             start += 1
         raise ConstantException('No char end.')
@@ -111,50 +231,36 @@ class Find:
 
 class Judge:
     @staticmethod
-    def is_identifier(s):
+    def isidentifier(s):
         """Determine whether a string is an identifier.
-        
+
         Suppose no identifier with parameters.
 
         Arguments:
-        s -- unicode
+        s - - unicode
         """
-        
+        if not s or s.isspace():
+            return False
+        if s[0] == u'_' or s[0].isalpha():
+            s = s[1:]
+            for c in s:
+                if c != u'_' and not c.isalnum():
+                    return False
+            return True
+        return False
 
     @staticmethod
-    def is_escaped(s, i):
+    def isescaped(s, i):
         """Determine whether the ith character of string i is escaped.
 
-        s -- unicode
-        i -- int
+        s - - unicode
+        i - - int
         """
         num_escape = 0
         while i > 0 and s[i - 1] == u'\\':
             num_escape += 1
             i -= 1
         return bool(num_escape % 2)
-
-    @staticmethod
-    def judge_Ctype(s):
-        s = s.strip()
-        if not s:
-            return Ctype.SPACE
-        if Judge.isbool(s):
-            return Ctype.BOOL
-        if Judge.isint(s):
-            return Ctype.INT
-        if Judge.ischar(s):
-            return Ctype.CHAR
-        if Judge.isfloat(s):
-            return Ctype.FLOAT
-        if Judge.isstring(s):
-            return Ctype.STRING
-        if Judge.iswstring(s):
-            return Ctype.WSTRING
-        if Judge.istuple(s):
-            return Ctype.TUPLE
-        else:
-            raise PreprocessorSytaxException('illegal ctype')
 
     @staticmethod
     def isbool(s):
@@ -205,134 +311,6 @@ class Judge:
         return False
 
 
-class Util:
-    @staticmethod
-    def execute_directives(directives):
-        effective = True
-        ifstack = []
-        macros = {}
-        for d in directives:
-            if effective:
-                i_start, i_end = Find.find_identifier(d)
-                identifier = str(d[i_start:i_end])
-                if d.startswith(u'#define'):
-                    macros[identifier] = Convert.c2p(d[i_end:])
-                elif d.startswith(u'#undef'):
-                    if identifier in macros:
-                        macros.pop(identifier)
-                elif d.startswith(u'#ifdef'):
-                    ifstack.append(effective)
-                    effective = identifier in macros
-                elif d.startswith(u'#ifndef'):
-                    ifstack.append(effective)
-                    effective = identifier not in macros
-                elif d.startswith(u'#else'):
-                    effective = not effective
-                elif d.startswith(u'#endif'):
-                    effective = ifstack.pop()
-            else:
-                if d.startswith(u'#ifdef'):
-                    ifstack.append(effective)
-                elif d.startswith(u'#ifndef'):
-                    ifstack.append(effective)
-                elif d.startswith(u'#else'):
-                    effective = ifstack[-1]
-                elif d.startswith(u'#endif'):
-                    effective = ifstack.pop()
-        if ifstack:
-            raise SourceSyntaxException('branches error')
-        return macros
-
-    @staticmethod
-    def remove_comment(s):
-        """Remove C/C++ comment.
-
-        Arguments:
-        s -- unicode
-        """
-        i = 0
-        new_s = u''
-        while i < len(s):
-            c = s[i]
-            if c == u'\"':
-                string_end = Find.find_string_end(s, i)  # can handle exception 
-                new_s += s[i:string_end + 1]
-                i = string_end + 1
-            elif c == u'\'':
-                char_end = Find.find_char_end(s, i)  # can handle exception
-                new_s += s[i:char_end + 1]
-                i = char_end + 1
-            elif c == u'/':
-                i += 1
-                c = s[i]
-                if c == u'/':
-                    # line comment begins
-                    newline_index = s.find(u'\n', i + 1)
-                    if newline_index == -1:
-                        i = len(s)
-                    i = newline_index
-                elif c == u'*':
-                    # block comment begins
-                    block_comment_end = s.find(u'*/', i + 1)
-                    if block_comment_end == -1:
-                        raise SourceSyntaxException('block comment without ending')
-                    new_s += u' '
-                    i = block_comment_end + 2
-                else:
-                    raise SourceSyntaxException('alone slash')
-            else:
-                new_s += c
-                i += 1
-        return new_s
-
-    @staticmethod
-    def extract_directives(s):
-        """Extract all directives into a list.
-
-        Suppose all directives are legal.
-        """
-        directives = [Util.formalize_directive(d)
-                      for d in s.split(u'\n') if d.strip()]
-        # TODO handle exception 
-        return directives
-
-    @staticmethod
-    def formalize_directive(d):
-        """If d(unicode) starts with '#', remove the spaces following it."""
-        d = d.strip()
-        if d.startswith(u'#'):
-            start = 1
-            while start < len(d) and d[start].isspace():
-                start += 1
-            d = u'#' + d[start:]
-        return d
-
-    @staticmethod
-    def list2tuple(group):
-        def recursion_l2t(group):
-            # group = tuple(group)
-            for i in range(len(group)):
-                if isinstance(group[i], list):
-                    recursion_l2t(group[i])
-                    group[i] = tuple(group[i])
-            # return group
-        recursion_l2t(group)
-        return tuple(group)
-        # return group
-
-    @staticmethod
-    def c2p_judge_Ctype(s):
-        """Judge Ctype"""
-        return Judge.judge_Ctype(s)
-
-    @staticmethod
-    def deepcopy(d):
-        d_cp = {}
-        for k in d:
-            d_cp[k] = d[k]
-        return d_cp
-
-
 class Convert:
     ESCAPE_MAP = {
         u'\\a': u'\a',
@@ -352,9 +330,68 @@ class Convert:
     def c2p(s):
         s = s.strip()
         if Judge.istuple(s):
-            return Convert.c2p_tuple(s)
+            return Convert.c2p_aggregate(s)  # can handle constant exception
         else:
-            return Convert.c2p_word(s)
+            return Convert.c2p_constant(s)  # can handle constant exception
+
+    @staticmethod
+    def c2p_aggregate(s):
+        """Convert aggregate into Python tuple.
+
+        Arguments:
+        s - - unicode
+        """
+        s = s.strip()
+        stack = []
+        i = 0
+        while i < len(s):
+            c = s[i]
+            if c.isspace() or c == u',':
+                i += 1
+            elif c == u'{':
+                if not stack:
+                    group = []
+                    stack.append(group)
+                else:
+                    new_list = []
+                    stack[-1].append(new_list)
+                    stack.append(new_list)
+                i += 1
+            elif c == u'}':
+                stack.pop()
+                i += 1
+            else:
+                start, end = Find.find_constant(s, i)
+                constant = s[start:end]
+                stack[-1].append(Convert.c2p_constant(constant))
+                i = end
+        if stack:
+            raise AggregateException()
+        return Util.list2tuple(group)
+
+    @staticmethod
+    def c2p_constant(s):
+        """Convert cpp constant of basic type to python object.
+
+        Arguments:
+        s - - unicode
+        """
+        s = s.strip()
+        if not s:
+            return None
+        if Judge.isbool(s):
+            return Convert.c2p_bool(s)
+        if Judge.isint(s):
+            return Convert.c2p_int(s)
+        if Judge.ischar(s):
+            return Convert.c2p_char(s)
+        if Judge.isfloat(s):
+            return Convert.c2p_float(s)
+        if Judge.isstring(s):
+            return Convert.c2p_string(s)
+        if Judge.iswstring(s):
+            return Convert.c2p_wstring(s)
+        raise ConstantException()
 
     @staticmethod
     def c2p_space(s):
@@ -464,61 +501,6 @@ class Convert:
         return new_s
 
     @staticmethod
-    def c2p_tuple(s):
-        """Convert aggregate into Python tuple.
-
-        Arguments:
-        s -- unicode
-        """
-        s = s.strip()
-        stack = []
-        isfirst = True
-        i = 0
-        while i < len(s):
-            c = s[i]
-            if c.isspace() or c == u',':
-                i += 1
-            elif c == u'{':
-                if not stack:
-                    group = []
-                    stack.append(group)
-                else:
-                    new_list = []
-                    stack[-1].append(new_list)
-                    stack.append(new_list)
-                i += 1
-            elif c == u'}':
-                stack.pop()
-                i += 1
-            else:
-                start, end = Find.find_constant(s, i)
-                constant = s[start:end]
-                stack[-1].append(Convert.c2p_word(constant))
-                i = end
-        assert stack == []
-        return Util.list2tuple(group)
-
-    @staticmethod
-    def c2p_word(s):
-        ctype = Util.c2p_judge_Ctype(s)
-        obj = None
-        if ctype == Ctype.SPACE:
-            Convert.c2p_space(s)
-        elif ctype == Ctype.BOOL:
-            obj = Convert.c2p_bool(s)
-        elif ctype == Ctype.INT:
-            obj = Convert.c2p_int(s)
-        elif ctype == Ctype.CHAR:
-            obj = Convert.c2p_char(s)
-        elif ctype == Ctype.FLOAT:
-            obj = Convert.c2p_float(s)
-        elif ctype == Ctype.STRING:
-            obj = Convert.c2p_string(s)
-        elif ctype == Ctype.WSTRING:
-            obj = Convert.c2p_wstring(s)
-        return obj
-
-    @staticmethod
     def p2c(o):
         s = ''
         if isinstance(o, bool):
@@ -593,7 +575,7 @@ class PyMacroParser:
         """Load macro definition from .cpp file.
 
         Arguments:
-        f -- str, file path
+        f - - str, file path
         """
         self._directives = []
         self._predefine = []
@@ -608,20 +590,20 @@ class PyMacroParser:
         automatically clears out the previous predefined macro sequence.
 
         Arguments:
-        s -- str, names of macros split by ';'
+        s - - str, names of macros split by ';'
         """
         self._predefine = []
-        macros = s.split(';')
-        for macro in macros:
-            if not macro.isspace():
-                self._predefine.append('#define ' + macro)
+        words = s.split(';')
+        for w in words:
+            if Judge.isidentifier(w):
+                self._predefine.append(u'#define ' + w)
         self._parser()
 
     def dumpDict(self):
         """Output available macros into a dictionary.
 
         Returns:
-        macros -- dict, available macros dictionary
+        macros - - dict, available macros dictionary
         """
         return Util.deepcopy(self._macros)
 
@@ -629,7 +611,7 @@ class PyMacroParser:
         """Output available macros into a .cpp file.
 
         Arguments:
-        f -- str, file path
+        f - - str, file path
         """
         with open(f, 'w') as fw:
             for macro in self._macros:
@@ -646,10 +628,10 @@ class PyMacroParser:
         """Extracting preprocessor directives from .cpp file.
 
         Arguments:
-        f -- str, file path
+        f - - str, file path
 
         Returns:
-        directives -- list, preprocessor directives
+        directives - - list, preprocessor directives
         """
         with open(f) as fr:
             content = unicode(fr.read(), 'utf-8')
