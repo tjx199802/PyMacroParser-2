@@ -23,6 +23,8 @@ class IdentifierException(Exception):
 class DirectiveHeaderException(Exception):
     pass
 
+class SourceSyntaxException(Exception):
+    pass
 
 class Ctype:
     ILLEGAL = 0
@@ -67,6 +69,7 @@ class Find:
         while start < len(d) and not d[start].isspace():
             start += 1
         i_start, i_end = Find.findword(d, start, len(d))
+        
         return i_start, i_end
 
     @staticmethod
@@ -107,6 +110,17 @@ class Find:
 
 
 class Judge:
+    @staticmethod
+    def is_identifier(s):
+        """Determine whether a string is an identifier.
+        
+        Suppose no identifier with parameters.
+
+        Arguments:
+        s -- unicode
+        """
+        
+
     @staticmethod
     def is_escaped(s, i):
         """Determine whether the ith character of string i is escaped.
@@ -225,7 +239,8 @@ class Util:
                     effective = ifstack[-1]
                 elif d.startswith(u'#endif'):
                     effective = ifstack.pop()
-        assert ifstack == []
+        if ifstack:
+            raise SourceSyntaxException('branches error')
         return macros
 
     @staticmethod
@@ -240,34 +255,34 @@ class Util:
         while i < len(s):
             c = s[i]
             if c == u'\"':
-                string_end = Find.find_string_end(s, i)
+                string_end = Find.find_string_end(s, i)  # can handle exception 
                 new_s += s[i:string_end + 1]
                 i = string_end + 1
             elif c == u'\'':
-                char_end = Find.find_char_end(s, i)
+                char_end = Find.find_char_end(s, i)  # can handle exception
                 new_s += s[i:char_end + 1]
                 i = char_end + 1
             elif c == u'/':
                 i += 1
                 c = s[i]
                 if c == u'/':
-                    # logger.info("This is the beginning of a line comment.")
+                    # line comment begins
                     newline_index = s.find(u'\n', i + 1)
                     if newline_index == -1:
                         i = len(s)
                     i = newline_index
                 elif c == u'*':
-                    # logger.info("This is the beginning of a block comment.")
+                    # block comment begins
                     block_comment_end = s.find(u'*/', i + 1)
-                    assert block_comment_end != -1, 'incomplete block comment'
+                    if block_comment_end == -1:
+                        raise SourceSyntaxException('block comment without ending')
                     new_s += u' '
                     i = block_comment_end + 2
                 else:
-                    raise Exception('alone slash')
+                    raise SourceSyntaxException('alone slash')
             else:
                 new_s += c
                 i += 1
-
         return new_s
 
     @staticmethod
@@ -278,11 +293,8 @@ class Util:
         """
         directives = [Util.formalize_directive(d)
                       for d in s.split(u'\n') if d.strip()]
+        # TODO handle exception 
         return directives
-        # if Check.check_directives(directives):
-        #     return directives
-        # else:
-        #     raise PreprocessorSytaxException()
 
     @staticmethod
     def formalize_directive(d):
